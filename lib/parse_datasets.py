@@ -9,9 +9,13 @@ import numpy as np
 import torch
 import torch.nn as nn
 
+import sysidexpr.benchmark as sidbench
+
 import lib.utils as utils
 from lib.diffeq_solver import DiffeqSolver
 from generate_timeseries import Periodic_1d
+from csv_timeseries import BenchmarkTimeseries
+from benchmarks import benchmarks
 from torch.distributions import uniform
 
 from torch.utils.data import DataLoader
@@ -122,7 +126,7 @@ def parse_datasets(args, device):
 		# Shuffle and split
 		train_data, test_data = model_selection.train_test_split(total_dataset, train_size= 0.8, 
 			random_state = 42, shuffle = True)
-
+		
 		record_id, tt, vals, mask, labels = train_data[0]
 
 		n_samples = len(total_dataset)
@@ -205,29 +209,35 @@ def parse_datasets(args, device):
 			init_freq = None, init_amplitude = 1.,
 			final_amplitude = 1., final_freq = None, 
 			z0 = 1.)
-
+		
 	##################################################################
+	if dataset_name == "benchmark":
+		dataset_obj = BenchmarkTimeseries(sidbench.Benchmark(benchmarks[0]))
+
 
 	if dataset_obj is None:
 		raise Exception("Unknown dataset: {}".format(dataset_name))
 
-	dataset = dataset_obj.sample_traj(time_steps_extrap, n_samples = args.n, 
-		noise_weight = args.noise_weight)
+	train_y, test_y = dataset_obj.sample_traj()
+	train_y = train_y.to(device)
+	test_y = test_y.to(device)
 
 	# Process small datasets
-	dataset = dataset.to(device)
-	time_steps_extrap = time_steps_extrap.to(device)
+	# dataset = dataset.to(device)
+	#time_steps_extrap = time_steps_extrap.to(device)
 
-	train_y, test_y = utils.split_train_test(dataset, train_fraq = 0.8)
+	#train_y, test_y = utils.split_train_test(dataset, train_fraq = 0.8)
 
-	n_samples = len(dataset)
-	input_dim = dataset.size(-1)
+	n_samples = len(train_y) + len(test_y)
+	input_dim = train_y.size(-1)
+	times = dataset_obj.get_times()
+	times = times.to(device) 
 
-	batch_size = min(args.batch_size, args.n)
+	batch_size = min(args.batch_size, len(train_y))
 	train_dataloader = DataLoader(train_y, batch_size = batch_size, shuffle=False,
-		collate_fn= lambda batch: basic_collate_fn(batch, time_steps_extrap, data_type = "train"))
+		collate_fn= lambda batch: basic_collate_fn(batch, times, args, device, data_type = "train"))
 	test_dataloader = DataLoader(test_y, batch_size = args.n, shuffle=False,
-		collate_fn= lambda batch: basic_collate_fn(batch, time_steps_extrap, data_type = "test"))
+		collate_fn= lambda batch: basic_collate_fn(batch, times, args, device, data_type = "test"))
 	
 	data_objects = {#"dataset_obj": dataset_obj, 
 				"train_dataloader": utils.inf_generator(train_dataloader), 
