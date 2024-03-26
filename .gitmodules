@@ -1,0 +1,3 @@
+[submodule "sysid-experiments"]
+	path = sysid-experiments
+	url = git@github.com:EthanJamesLew/sysid-experiments.git
