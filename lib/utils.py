@@ -247,6 +247,41 @@ def get_next_batch(dataloader):
 	return batch_dict
 
 
+def get_test_batch(data_dict):
+
+	batch_dict = get_dict_template()
+
+	# remove the time points where there are no observations in this batch
+	non_missing_tp = torch.sum(data_dict["observed_data"],(0,2)) != 0.
+	batch_dict["observed_data"] = data_dict["observed_data"][:, non_missing_tp]
+	batch_dict["observed_tp"] = data_dict["observed_tp"][non_missing_tp]
+
+	# print("observed data")
+	# print(batch_dict["observed_data"].size())
+
+	if ("observed_mask" in data_dict) and (data_dict["observed_mask"] is not None):
+		batch_dict["observed_mask"] = data_dict["observed_mask"][:, non_missing_tp]
+
+	batch_dict[ "data_to_predict"] = data_dict["data_to_predict"]
+	batch_dict["tp_to_predict"] = data_dict["tp_to_predict"]
+
+	non_missing_tp = torch.sum(data_dict["data_to_predict"],(0,2)) != 0.
+	batch_dict["data_to_predict"] = data_dict["data_to_predict"][:, non_missing_tp]
+	batch_dict["tp_to_predict"] = data_dict["tp_to_predict"][non_missing_tp]
+
+	# print("data_to_predict")
+	# print(batch_dict["data_to_predict"].size())
+
+	if ("mask_predicted_data" in data_dict) and (data_dict["mask_predicted_data"] is not None):
+		batch_dict["mask_predicted_data"] = data_dict["mask_predicted_data"][:, non_missing_tp]
+
+	if ("labels" in data_dict) and (data_dict["labels"] is not None):
+		batch_dict["labels"] = data_dict["labels"]
+
+	batch_dict["mode"] = data_dict["mode"]
+	return batch_dict
+
+
 
 def get_ckpt_model(ckpt_path, model, device):
 	if not os.path.exists(ckpt_path):

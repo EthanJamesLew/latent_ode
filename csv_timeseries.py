@@ -18,11 +18,12 @@ class BenchmarkTimeseries(TimeSeries):
         self.benchmark = benchmark
         self.data_len = data_len
 
-
     def get_times(self):
         trajectories = self.benchmark.load_trajectories()
         data = trajectories['Train']
-        for t in data:
+        ids = sorted(data._trajs.keys())
+        for k in ids:
+           t = data[k]
            times = t.times
         return torch.Tensor().new_tensor(times, device = self.device)
 
@@ -30,7 +31,9 @@ class BenchmarkTimeseries(TimeSeries):
         trajectories = self.benchmark.load_trajectories()
         data = trajectories[key]
         traj_list = []
-        for t in data:
+        ids = sorted(data._trajs.keys())
+        for k in ids:
+            t = data[k]
             if self.data_len is not None:
                 if len(t.times) < self.data_len:
                     continue

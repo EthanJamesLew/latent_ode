@@ -238,10 +238,13 @@ def parse_datasets(args, device):
 		collate_fn= lambda batch: basic_collate_fn(batch, times, args, device, data_type = "train"))
 	test_dataloader = DataLoader(test_y, batch_size = args.n, shuffle=False,
 		collate_fn= lambda batch: basic_collate_fn(batch, times, args, device, data_type = "test"))
+	test_data = DataLoader(test_y, batch_size = test_y.shape[0], shuffle=False,
+		collate_fn= lambda batch: basic_collate_fn(batch, times, args, device, data_type = "test"))
 	
 	data_objects = {#"dataset_obj": dataset_obj, 
 				"train_dataloader": utils.inf_generator(train_dataloader), 
 				"test_dataloader": utils.inf_generator(test_dataloader),
+				"test_data": utils.inf_generator(test_data),
 				"input_dim": input_dim,
 				"n_train_batches": len(train_dataloader),
 				"n_test_batches": len(test_dataloader)}

@@ -50,7 +50,6 @@ class LatentODE(VAE_Baseline):
 
 	def get_reconstruction(self, time_steps_to_predict, truth, truth_time_steps, 
 		mask = None, n_traj_samples = 1, run_backwards = True, mode = None):
-
 		if isinstance(self.encoder_z0, Encoder_z0_ODE_RNN) or \
 			isinstance(self.encoder_z0, Encoder_z0_RNN):
 
