@@ -255,6 +255,7 @@ if __name__ == '__main__':
 	observed_mask = data_dict["observed_mask"]
 	time_steps = data_dict["tp_to_predict"]
 	time_steps_to_predict = time_steps
+	print(observed_data[0, :20, :])
 
 	log_path = "logs/" + file_name + "_" + str(experimentID) + ".log"
 	if not os.path.exists("logs/"):
@@ -285,9 +286,8 @@ if __name__ == '__main__':
 		if itr % (n_iters_to_viz * num_batches) == 0:
 			reconstructions, info = model.get_reconstruction(time_steps_to_predict, 
 				observed_data, observed_time_steps, mask = observed_mask, n_traj_samples=1)
-			print(reconstructions.shape)
+			print(reconstructions[0, 0, :20, :])
 			with torch.no_grad():
-
 				test_res = compute_loss_all_batches(model, 
 					data_obj["test_dataloader"], args,
 					n_batches = data_obj["n_test_batches"],
