@@ -15,7 +15,7 @@ import lib.utils as utils
 from lib.diffeq_solver import DiffeqSolver
 from generate_timeseries import Periodic_1d
 from csv_timeseries import BenchmarkTimeseries
-from benchmarks import benchmarks
+from benchmarks import current_benchmark 
 from torch.distributions import uniform
 
 from torch.utils.data import DataLoader
@@ -175,6 +175,8 @@ def parse_datasets(args, device):
 		record_id, tt, vals, mask, labels = train_data[0]
 		input_dim = vals.size(-1)
 
+		print([(t if not hasattr(t, "shape") else t.shape) for t in train_data[0]])
+
 		batch_size = min(min(len(dataset_obj), args.batch_size), args.n)
 		train_dataloader = DataLoader(train_data, batch_size= batch_size, shuffle=False, 
 			collate_fn= lambda batch: variable_time_collate_fn_activity(batch, args, device, data_type = "train"))
@@ -212,7 +214,7 @@ def parse_datasets(args, device):
 		
 	##################################################################
 	if dataset_name == "benchmark":
-		dataset_obj = BenchmarkTimeseries(sidbench.Benchmark(benchmarks[0]))
+		dataset_obj = BenchmarkTimeseries(sidbench.Benchmark(current_benchmark))
 
 
 	if dataset_obj is None:
@@ -241,7 +243,6 @@ def parse_datasets(args, device):
 	test_data = DataLoader(test_y, batch_size = test_y.shape[0], shuffle=False,
 		collate_fn= lambda batch: basic_collate_fn(batch, times, args, device, data_type = "test"))
 
-	print(test_y[0, :20, :])	
 	data_objects = {#"dataset_obj": dataset_obj, 
 				"train_dataloader": utils.inf_generator(train_dataloader), 
 				"test_dataloader": utils.inf_generator(test_dataloader),

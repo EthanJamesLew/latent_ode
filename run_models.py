@@ -4,7 +4,8 @@
 ###########################
 import sysidexpr.benchmark as sidbench
 from csv_timeseries import BenchmarkTimeseries
-from benchmarks import benchmarks
+from benchmarks import current_benchmark 
+from pathlib import Path
 
 import os
 import sys
@@ -242,20 +243,16 @@ if __name__ == '__main__':
 
 	##################################################################
 	# Training
-		
-	#dataset_obj = BenchmarkTimeseries(sidbench.Benchmark(benchmarks[0]))
-	#_, test_y = dataset_obj.sample_traj()
-	#test_y = test_y.to(device)
-	#times = dataset_obj.get_times()
-	#times = times.to(device)
 
-	data_dict = test_dict = utils.get_test_batch(data_obj["test_data"].__next__())
-	observed_data =  data_dict["observed_data"]
-	observed_time_steps = data_dict["observed_tp"]
-	observed_mask = data_dict["observed_mask"]
-	time_steps = data_dict["tp_to_predict"]
-	time_steps_to_predict = time_steps
-	print(observed_data[0, :20, :])
+	if True:	
+		dataset_obj = BenchmarkTimeseries(sidbench.Benchmark(current_benchmark))
+		data_dict = test_dict = utils.get_test_batch(data_obj["test_data"].__next__())
+		observed_data =  data_dict["observed_data"]
+		observed_time_steps = data_dict["observed_tp"]
+		observed_mask = data_dict["observed_mask"]
+		time_steps = data_dict["tp_to_predict"]
+		time_steps_to_predict = time_steps
+		predictions_fname = f"{Path('predictions') / Path(dataset_obj.benchmark.config.data_csv).stem}.csv"
 
 	log_path = "logs/" + file_name + "_" + str(experimentID) + ".log"
 	if not os.path.exists("logs/"):
@@ -284,9 +281,6 @@ if __name__ == '__main__':
 
 		n_iters_to_viz = 1
 		if itr % (n_iters_to_viz * num_batches) == 0:
-			reconstructions, info = model.get_reconstruction(time_steps_to_predict, 
-				observed_data, observed_time_steps, mask = observed_mask, n_traj_samples=1)
-			print(reconstructions[0, 0, :20, :])
 			with torch.no_grad():
 				test_res = compute_loss_all_batches(model, 
 					data_obj["test_dataloader"], args,
@@ -342,6 +336,9 @@ if __name__ == '__main__':
 							plot_name = file_name + "_" + str(experimentID) + "_{:03d}".format(plot_id) + ".png",
 						 	experimentID = experimentID, save=True)
 						plt.pause(0.01)
+	reconstructions, info = model.get_reconstruction(time_steps_to_predict, 
+		observed_data, observed_time_steps, mask = observed_mask, n_traj_samples=1)
+	dataset_obj.predictions_df(reconstructions, time_steps_to_predict).to_csv(predictions_fname)
 	torch.save({
 		'args': args,
 		'state_dict': model.state_dict(),
