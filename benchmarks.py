@@ -97,4 +97,4 @@ benchmarks = [
   ),
 ]
 
-current_benchmark = benchmarks[-1]
+current_benchmark = benchmarks[5]

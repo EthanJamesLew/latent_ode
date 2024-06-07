@@ -6,8 +6,61 @@ import numpy as np
 import sysidexpr.benchmark as sidbench
 from benchmarks import benchmarks
 import torch
-
+import lib.utils as utils
 from generate_timeseries import TimeSeries
+
+
+def my_collate_fn(batch, args, device = torch.device("cpu"), data_type = "train"):
+    """
+    Expects a batch of M time series data in the form of np.array([times | states]) where
+        - times is a (T,) length array
+        - states is a (T, D) 
+    Returns:
+        combined_tt: The union of all time observations.
+        combined_vals: (M, T, D) tensor containing the observed values.
+        combined_mask: (M, T, D) tensor containing 1 where values were observed and 0 otherwise.
+    """
+    D = batch[0].shape[-1]-1
+
+    combined_tt, inverse_indices = torch.unique(torch.cat([torch.Tensor().new_tensor(ex[:, 0]).to(device) for ex in batch]), sorted=True, return_inverse=True)
+    combined_tt = combined_tt.to(device)
+    
+    offset = 0
+    combined_vals = torch.zeros([len(batch), len(combined_tt), D]).to(device)
+    combined_mask = torch.zeros([len(batch), len(combined_tt), D]).to(device)
+
+    combined_labels = None
+    N_labels = 1
+
+    combined_labels = torch.zeros(len(batch), N_labels) + torch.tensor(float('nan'))
+    combined_labels = combined_labels.to(device = device)
+	
+    for b, res in enumerate(batch):
+        tt = torch.Tensor().new_tensor(res[:, 0]).to(device)
+        vals = torch.Tensor().new_tensor(res[:, 1:]).to(device)
+        mask = torch.Tensor().new_tensor(np.ones(vals.shape)).to(device)
+
+        indices = inverse_indices[offset:offset + len(tt)]
+        offset += len(tt)
+
+        combined_vals[b, indices] = vals
+        combined_mask[b, indices] = mask
+
+    #combined_vals, _, _ = utils.normalize_masked_data(combined_vals, combined_mask, att_min = None, att_max = None)
+
+    if torch.max(combined_tt) != 0.:
+        combined_tt = combined_tt / torch.max(combined_tt)
+        
+    data_dict = {
+        "data": combined_vals, 
+        "time_steps": combined_tt,
+        "mask": combined_mask,
+        #"labels": combined_labels
+        }
+
+    data_dict = utils.split_and_subsample_batch(data_dict, args, data_type = data_type)
+    return data_dict
+
 
 class BenchmarkTimeseries(TimeSeries):
     """
@@ -74,7 +127,7 @@ class BenchmarkTimeseries(TimeSeries):
                 traj = np.hstack((np.atleast_2d(t.times[:self.data_len]).T, t.states[:self.data_len]))
             else:
                 traj = np.hstack((np.atleast_2d(t.times).T, t.states))
-            traj = np.expand_dims(traj[:,1:], 0)
+            #traj = np.expand_dims(traj[:,1:], 0)
             traj_list.append(traj)
 
         #traj_list = np.array(traj_list)

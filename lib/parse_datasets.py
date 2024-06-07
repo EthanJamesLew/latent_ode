@@ -22,6 +22,7 @@ from torch.utils.data import DataLoader
 from mujoco_physics import HopperPhysics
 from physionet import PhysioNet, variable_time_collate_fn, get_data_min_max
 from person_activity import PersonActivity, variable_time_collate_fn_activity
+from csv_timeseries import my_collate_fn
 
 from sklearn import model_selection
 import random
@@ -232,17 +233,17 @@ def parse_datasets(args, device):
 
 	n_samples = len(train_y) + len(test_y)
 	print(train_y[0].shape[-1])
-	input_dim = train_y[0].shape[-1] #train_y.size(-1)
+	input_dim = train_y[0].shape[-1] - 1 #train_y.size(-1)
 	times = dataset_obj.get_times()
 	times = times.to(device) 
 
 	batch_size = min(args.batch_size, len(train_y))
 	train_dataloader = DataLoader(train_y, batch_size = batch_size, shuffle=False,
-		collate_fn= lambda batch: my_collate_fn(batch, times, args, device, data_type = "train"))
+		collate_fn= lambda batch: my_collate_fn(batch, args, device, data_type = "train"))
 	test_dataloader = DataLoader(test_y, batch_size = args.n, shuffle=False,
-		collate_fn= lambda batch: my_collate_fn(batch, times, args, device, data_type = "test"))
+		collate_fn= lambda batch: my_collate_fn(batch, args, device, data_type = "test"))
 	test_data = DataLoader(test_y, batch_size = len(test_y), shuffle=False,
-		collate_fn= lambda batch: my_collate_fn(batch, times, args, device, data_type = "test"))
+		collate_fn= lambda batch: my_collate_fn(batch, args, device, data_type = "test"))
 
 	data_objects = {#"dataset_obj": dataset_obj, 
 				"train_dataloader": utils.inf_generator(train_dataloader), 
