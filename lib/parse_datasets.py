@@ -221,8 +221,8 @@ def parse_datasets(args, device):
 		raise Exception("Unknown dataset: {}".format(dataset_name))
 
 	train_y, test_y = dataset_obj.sample_traj()
-	train_y = train_y.to(device)
-	test_y = test_y.to(device)
+	#train_y = train_y.to(device)
+	#test_y = test_y.to(device)
 
 	# Process small datasets
 	# dataset = dataset.to(device)
@@ -231,17 +231,18 @@ def parse_datasets(args, device):
 	#train_y, test_y = utils.split_train_test(dataset, train_fraq = 0.8)
 
 	n_samples = len(train_y) + len(test_y)
-	input_dim = train_y.size(-1)
+	print(train_y[0].shape[-1])
+	input_dim = train_y[0].shape[-1] #train_y.size(-1)
 	times = dataset_obj.get_times()
 	times = times.to(device) 
 
 	batch_size = min(args.batch_size, len(train_y))
 	train_dataloader = DataLoader(train_y, batch_size = batch_size, shuffle=False,
-		collate_fn= lambda batch: basic_collate_fn(batch, times, args, device, data_type = "train"))
+		collate_fn= lambda batch: my_collate_fn(batch, times, args, device, data_type = "train"))
 	test_dataloader = DataLoader(test_y, batch_size = args.n, shuffle=False,
-		collate_fn= lambda batch: basic_collate_fn(batch, times, args, device, data_type = "test"))
-	test_data = DataLoader(test_y, batch_size = test_y.shape[0], shuffle=False,
-		collate_fn= lambda batch: basic_collate_fn(batch, times, args, device, data_type = "test"))
+		collate_fn= lambda batch: my_collate_fn(batch, times, args, device, data_type = "test"))
+	test_data = DataLoader(test_y, batch_size = len(test_y), shuffle=False,
+		collate_fn= lambda batch: my_collate_fn(batch, times, args, device, data_type = "test"))
 
 	data_objects = {#"dataset_obj": dataset_obj, 
 				"train_dataloader": utils.inf_generator(train_dataloader), 

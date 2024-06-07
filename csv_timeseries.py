@@ -77,9 +77,9 @@ class BenchmarkTimeseries(TimeSeries):
             traj = np.expand_dims(traj[:,1:], 0)
             traj_list.append(traj)
 
-        traj_list = np.array(traj_list)
-        traj_list = torch.Tensor().new_tensor(traj_list, device = self.device)
-        traj_list = traj_list.squeeze(1)
+        #traj_list = np.array(traj_list)
+        #traj_list = torch.Tensor().new_tensor(traj_list, device = self.device)
+        #traj_list = traj_list.squeeze(1)
         return traj_list
 
     def sample_traj(self, n_samples = 1):
